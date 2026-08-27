@@ -97,7 +97,8 @@
   # ================= 用户 =================
   users.users.reyear = {
     isNormalUser = true;
-    # 密码不写入仓库 (此前明文曾泄露): 由 install.sh 装机时交互设置 (chpasswd)
+    # 密码以 sha512crypt 哈希存储 (passlib 生成); 建议装机后 passwd 更换 (曾短暂公开, 仓库已转私密)
+    hashedPassword = "$6$rounds=656000$kWnXXPCaFTnHgfa.$RJIwCzNOBVhtgJw8ZcBzb98y2fxC5AG.JyoY6.i7IFE.m1gc0f9K/UtPw2F.3bLTr8OUk3INuhMxjNasAYQ56.";
     extraGroups = [ "wheel" "networkmanager" "video" "audio" ];
   };
 

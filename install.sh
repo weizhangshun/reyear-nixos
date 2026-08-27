@@ -84,19 +84,7 @@ nix run .#disko -- --mode disko /tmp/3n-disko.nix
 echo ""
 echo "=== 开始安装系统 (nixos-install, 首次构建较久) ==="
 nixos-install --flake .#reyear-nixos --root /mnt --no-root-passwd
-
-# ---------- 4.5 设置 reyear 登录密码 (不写入仓库, 不落盘明文) ----------
-echo ""
-echo "=== 设置 reyear 的登录密码 ==="
-read -r -s -p "新密码: " pw1; echo
-read -r -s -p "再次输入确认: " pw2; echo
-if [ -z "$pw1" ] || [ "$pw1" != "$pw2" ]; then
-  echo "输入为空或两次不一致! 装好后可用: sudo nixos-enter --root /mnt passwd reyear 补救"
-  exit 1
-fi
-echo "reyear:$pw1" | chroot /mnt /run/current-system/sw/bin/chpasswd
-unset pw1 pw2
-echo "密码已设置 ✅"
+# reyear 的密码已以哈希形式配置在 system.nix (hashedPassword), 装机即生效
 
 # ---------- 5. 完成提示 ----------
 cat <<'EOF'
@@ -104,7 +92,7 @@ cat <<'EOF'
 ============================================================
 安装完成!
   1. 重启进入新系统:  reboot
-  2. 登录:  用户 reyear (装机时设置的密码)
+  2. 登录:  用户 reyear (密码已配置为哈希, 见 system.nix)
   3. (可选) 注册 TPM 自动解锁, 之后开机免输密码:
        sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-id/<你的盘>-part2
      撤销: sudo systemd-cryptenroll --wipe-slot=tpm2 <luks分区>

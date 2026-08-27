@@ -25,7 +25,7 @@ nixos-unstable / flake / home-manager / btrfs / LUKS+TPM / 最新内核 / 中文
 | 项 | 值 |
 |---|---|
 | 主机名 | `reyear-nixos` |
-| 用户名 | `reyear`（密码由 `install.sh` 装机时交互设置，**不存仓库**）|
+| 用户名 | `reyear`（密码以 sha512crypt 哈希存于 `system.nix`）|
 | git 身份 | `reyear <reyearocean@qq.com>` |
 | 磁盘 | 安装时由 `install.sh` 交互选择；`disko.nix` 里的 `device` 只是占位符，脚本会自动替换 |
 
@@ -53,7 +53,7 @@ nixos-anywhere --flake .#reyear-nixos root@<目标机IP>
 ## 首次开机后
 
 ```bash
-passwd                                # 修改密码 (装机时已交互设置, 不存仓库)
+passwd                                # 建议修改密码 (对应密码曾短暂公开, 仓库已转私密)
 sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-id/<你的盘>-part2
                                       # 注册 TPM2, 之后开机免输密码自动解锁
                                       # (设备路径是 LUKS 分区; 失败时用 --tpm2-pcrs=0+7 重试)
