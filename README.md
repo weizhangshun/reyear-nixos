@@ -90,6 +90,18 @@ nix flake update                                 # 先升级锁定版本
 
 > ✅ 选项名已对照 nixpkgs 源码核验（大写键名如 SUBVOLUME / TIMELINE_CREATE；无 enable 选项）。
 
+## 国内网络加速（清华源）
+
+二进制缓存已设**清华 TUNA 镜像为首要源**（`mirrors.tuna.tsinghua.edu.cn/nix-channels/store`，与官方 `cache.nixos.org` 同签名，内容一致）。
+
+可选：让 flake 输入（从 GitHub 拉取 nixpkgs 等源码）也走清华镜像：
+
+```bash
+git config --global url."https://mirrors.tuna.tsinghua.edu.cn/github/".insteadOf "https://github.com/"
+```
+
+> ⚠️ 该 git 配置全局生效；若以后访问 GitHub 异常，用 `git config --global --unset-all url.https://mirrors.tuna.tsinghua.edu.cn/github/.insteadOf` 撤销。
+
 ## 参考
 
 - [Noctalia 官方 NixOS 文档](https://docs.noctalia.dev/noctalia/getting-started/nixos/) | [Noctalia GitHub](https://github.com/noctalia-dev/noctalia)
