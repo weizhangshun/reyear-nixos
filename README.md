@@ -11,6 +11,7 @@ nixos-unstable / flake / home-manager / btrfs / LUKS+TPM / 最新内核 / 中文
 ```
 ├── flake.nix                    # 唯一入口 (inputs: nixpkgs-unstable, home-manager, disko, noctalia)
 ├── install.sh                   # 一键安装脚本 (live 环境运行)
+├── tpm-enroll.sh                # TPM 自动解锁注册 (自动检测, 无需填 UUID)
 └── hosts/reyear-nixos/
     ├── default.nix              # 入口: 汇聚模块 + 启用 home-manager
     ├── disko.nix                # 磁盘: GPT + LUKS2 + btrfs 子卷 (声明式)
@@ -54,12 +55,10 @@ nixos-anywhere --flake .#reyear-nixos root@<目标机IP>
 
 ```bash
 passwd                                # 建议修改密码 (对应密码曾短暂公开, 仓库已转私密)
-sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-id/<你的盘>-part2
-                                      # 注册 TPM2, 之后开机免输密码自动解锁
-                                      # (设备路径是 LUKS 分区; 失败时用 --tpm2-pcrs=0+7 重试)
+sudo ./tpm-enroll.sh                  # 注册 TPM2 自动解锁 (自动检测 LUKS 设备, 无需填 UUID)
 ```
 
-> TPM 解锁依赖 `boot.initrd.systemd.enable = true`（已开启）。若想撤销：`sudo systemd-cryptenroll --wipe-slot=tpm2 <luks分区>`。
+> TPM 解锁依赖 `boot.initrd.systemd.enable = true`（已开启）。`tpm-enroll.sh` 会自动检测 LUKS 分区；撤销：`sudo systemd-cryptenroll --wipe-slot=tpm2 <luks分区>`。
 
 ## 日常更新 / 回滚
 

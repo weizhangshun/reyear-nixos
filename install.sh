@@ -93,8 +93,8 @@ cat <<'EOF'
 安装完成!
   1. 重启进入新系统:  reboot
   2. 登录:  用户 reyear (密码已配置为哈希, 见 system.nix)
-  3. (可选) 注册 TPM 自动解锁, 之后开机免输密码:
-       sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-id/<你的盘>-part2
+  3. (可选) 注册 TPM 自动解锁, 之后开机免输密码 (自动检测, 无需填 UUID/盘符):
+       sudo ./tpm-enroll.sh
      撤销: sudo systemd-cryptenroll --wipe-slot=tpm2 <luks分区>
   4. 更新系统:  sudo nixos-rebuild switch --flake /etc/nixos
 ============================================================
