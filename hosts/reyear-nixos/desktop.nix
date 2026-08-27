@@ -28,7 +28,11 @@
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   # ================= 显示管理器 =================
-  services.displayManager.sddm.enable = true;
+  # niri 是纯 Wayland 桌面: 用 SDDM 原生 Wayland 后端 (无需 X server, 满足 SDDM 断言)
+  services.displayManager.sddm = {
+    enable = true;
+    wayland.enable = true;
+  };
   # 备选: greetd + tuigreet, 或 Noctalia Greeter (https://docs.noctalia.dev/greeter/)
 
   programs.dconf.enable = true;
