@@ -1,0 +1,2 @@
+# 强制 LF 换行 (install.sh 等 bash 脚本不能有 CRLF)
+* text=auto eol=lf

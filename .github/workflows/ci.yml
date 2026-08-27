@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # 允许把生成的 flake.lock 提交回仓库
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v9
+
+      # 核心验证: 评估整个 flake (nixos 配置 + home-manager + noctalia + disko)
+      # 会捕获类型错误/不存在的选项/求值错误
+      # 把完整输出写入 step summary, 便于通过 API/页面直接查看失败原因
+      - name: nix flake check
+        run: |
+          set +e
+          nix flake check 2>&1 | tee /tmp/flake-check.log
+          status=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "### nix flake check 输出"
+            echo '```'
+            tail -120 /tmp/flake-check.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+      # 首次运行会生成 flake.lock; 若有变化则提交回仓库 (实现可复现构建)
+      - name: Commit flake.lock if changed
+        run: |
+          if git diff --exit-code -- flake.lock >/dev/null 2>&1; then
+            echo "flake.lock 无变化"
+          else
+            git config user.name "reyear"
+            git config user.email "reyearocean@qq.com"
+            git add flake.lock
+            git commit -m "chore: update flake.lock [ci]"
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            git push origin main
+            echo "flake.lock 已提交"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
