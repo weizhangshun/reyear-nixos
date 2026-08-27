@@ -20,7 +20,7 @@
 
   home.username = "reyear";
   home.homeDirectory = "/home/reyear";
-  home.stateVersion = "25.11";
+  home.stateVersion = "26.05";
 
   # ============ 用户级程序 (按需添加) ============
   home.packages = with pkgs; [

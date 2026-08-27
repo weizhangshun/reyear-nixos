@@ -18,6 +18,6 @@
     extraSpecialArgs = { inherit inputs; };
   };
 
-  # 对应 nixos-unstable (2026-04 时点, 与用户现行配置一致); 升级大版本后按需上调
-  system.stateVersion = "25.11";
+  # 当前 unstable 为 26.11pre, 最新稳定版 26.05; stateVersion 用最新稳定版最合适
+  system.stateVersion = "26.05";
 }
