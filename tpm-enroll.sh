@@ -8,7 +8,7 @@
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "请用 root 运行: sudo ./tpm-enroll.sh"
+  echo "Run as root: sudo ./tpm-enroll.sh"
   exit 1
 fi
 
@@ -16,16 +16,16 @@ fi
 LUKS_DEV="/dev/$(lsblk -no PKNAME /dev/mapper/cryptroot 2>/dev/null | head -1)"
 
 if [ -z "$LUKS_DEV" ] || [ "$LUKS_DEV" = "/dev/" ]; then
-  echo "未能自动检测 LUKS 设备, 请手动执行:"
+  echo "Failed to auto-detect the LUKS device. Do it manually:"
   echo "  lsblk -o NAME,TYPE | grep -i luks"
-  echo "  sudo systemd-cryptenroll --tpm2-device=auto <上面查到的分区>"
+  echo "  sudo systemd-cryptenroll --tpm2-device=auto <partition-found-above>"
   exit 1
 fi
 
-echo "检测到 LUKS 设备: $LUKS_DEV"
-echo "正在注册 TPM2 自动解锁 (需主板开启 TPM)..."
+echo "Detected LUKS device: $LUKS_DEV"
+echo "Enrolling TPM2 auto-unlock (TPM must be enabled in firmware)..."
 systemd-cryptenroll --tpm2-device=auto "$LUKS_DEV"
 
 echo ""
-echo "✅ 完成! 重启验证免密解锁:  reboot"
-echo "   (若重启仍需密码: sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 $LUKS_DEV)"
+echo "Done! Reboot to verify passwordless unlock:  reboot"
+echo "   (If it still asks for a password: sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 $LUKS_DEV)"
