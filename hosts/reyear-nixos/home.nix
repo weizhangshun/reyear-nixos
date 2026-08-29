@@ -29,8 +29,11 @@
 
   programs.git = {
     enable = true;
-    userName = "reyear";
-    userEmail = "reyearocean@qq.com";
+    # userName/userEmail 已弃用, 改用 settings (生成 .gitconfig)
+    settings.user = {
+      name = "reyear";
+      email = "reyearocean@qq.com";
+    };
   };
 
   programs.kitty.enable = true;
