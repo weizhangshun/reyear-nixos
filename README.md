@@ -92,7 +92,7 @@ nix flake update                                 # 先升级锁定版本
 
 ## 国内网络加速（清华源）
 
-二进制缓存已设**清华 TUNA 镜像为首要源**（`mirrors.tuna.tsinghua.edu.cn/nix-channels/store`，与官方 `cache.nixos.org` 同签名，内容一致）。
+二进制缓存已设**清华 TUNA 镜像为首要源**（`mirrors.tuna.tsinghua.edu.cn/nix/store`，与官方 `cache.nixos.org` 同签名，内容一致；注意二进制缓存路径是 `/nix/store`，`/nix-channels/` 是频道与 ISO 的地址）。
 
 可选：让 flake 输入（从 GitHub 拉取 nixpkgs 等源码）也走清华镜像：
 

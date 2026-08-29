@@ -82,7 +82,7 @@
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
     substituters = [
-      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA 镜像 (首要, 国内加速; 与 cache.nixos.org 同签名)
+      "https://mirrors.tuna.tsinghua.edu.cn/nix/store"   # 清华 TUNA 镜像 (首要, 国内加速; 与 cache.nixos.org 同签名)
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://noctalia.cachix.org"   # noctalia 官方二进制缓存, 见官方文档

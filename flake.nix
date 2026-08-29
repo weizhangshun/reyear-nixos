@@ -26,7 +26,7 @@
   # 装机机/构建机上的 flake 级缓存设置
   nixConfig = {
     extra-substituters = [
-      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA 镜像 (首要)
+      "https://mirrors.tuna.tsinghua.edu.cn/nix/store"   # 清华 TUNA 镜像 (首要; 二进制缓存路径是 /nix/store, /nix-channels 是频道地址)
       "https://nix-community.cachix.org"
       "https://noctalia.cachix.org"
     ];
