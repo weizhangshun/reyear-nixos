@@ -36,6 +36,19 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+# ---------- 0.1 内存预检 ----------
+# live ISO 的 /nix/store 可写部分是内存 tmpfs: 每个下载的包都占 RAM,
+# 内存不足会在下载工具闭包或 nixos-install 时报 No space left on device
+MEM_AVAIL_KB="$(awk '/MemAvailable/ {print $2}' /proc/meminfo)"
+if [ "${MEM_AVAIL_KB:-0}" -lt 6000000 ]; then
+  echo "WARNING: only $((MEM_AVAIL_KB / 1024)) MiB RAM available."
+  echo "  The live ISO store is RAM-backed; low RAM causes 'No space left on"
+  echo "  device' while downloading packages. Give this VM >= 8 GB RAM, or run:"
+  echo "    mount -o remount,size=6G /nix/.rw-store"
+  read -r -p "Continue anyway? [y/N]: " lowram
+  [ "$lowram" = "y" ] || exit 1
+fi
+
 # live 环境可能没开 flakes, 全局开启
 export NIX_CONFIG="experimental-features = nix-command flakes"
 
