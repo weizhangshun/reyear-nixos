@@ -14,9 +14,17 @@
 #  运行时输出一律使用英文: NixOS 安装盘的裸 TTY 字体不含 CJK 字形,
 #  中文会显示为方块 (豆腐块), 英文保证任何控制台可读。
 #
-#  安装过程中只需交互 2 次:
-#    1. 选择目标磁盘 (默认选最大的那块, 自动转 by-id)
-#    2. 输入 LUKS 加密密码 (两次确认)
+#  交互点共 3 处:
+#    1. 选择目标磁盘 (默认最大物理盘, 自动转 by-id)
+#    2. 输入 yes 确认清盘
+#    3. LUKS 加密密码输两次 (由 disko 提示; 不一致可整步重试)
+#
+#  流程 (关键设计: 真实磁盘路径就地写入仓库的 disko.nix,
+#  让 disko 分区与 nixos-install 求值用同一份配置, 装出来的系统
+#  boot.initrd.luks.devices / fileSystems 指向真实 by-id 设备):
+#    flake check -> 选盘 -> 就地 sed -> disko dry-run
+#    -> disko destroy,format,mount -> nixos-install
+#    -> 复制本仓库到 /mnt/etc/nixos (重启后才能 nixos-rebuild)
 # ============================================================
 set -euo pipefail
 
@@ -34,6 +42,7 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 echo "=== 3N Desktop (NixOS + Niri + Noctalia) Installer ==="
 
 # ---------- 0.5 预检: flake 可求值性 (首次较慢, 需联网) ----------
+# 放在动磁盘之前: 配置求值失败就中止, 避免清完盘才发现问题
 echo ""
 echo "=== Precheck: nix flake check (first run is slow, needs network) ==="
 nix flake check
@@ -45,10 +54,16 @@ echo ""
 echo "Available disks:"
 lsblk -d -o NAME,SIZE,MODEL,TRAN
 
-DEFAULT_DISK="$(lsblk -dno NAME,SIZE | sort -k2 -h | tail -1 | awk '{print "/dev/"$1}')"
+# 默认盘: 只认物理磁盘 (TYPE=disk), 排除 zram/loop 等虚拟设备, 取容量最大者
+DEFAULT_DISK="$(
+  lsblk -dno NAME,SIZE,TYPE,TRAN \
+    | awk '$3 == "disk" && $1 !~ /^zram/ {print $1, $2}' \
+    | sort -k2 -h | tail -1 | awk '{print "/dev/"$1}'
+)"
 while :; do
-  read -r -p "Disk to install to [default ${DEFAULT_DISK}]: " choice
+  read -r -p "Disk to install to [default ${DEFAULT_DISK:-none}]: " choice
   DISK="${choice:-$DEFAULT_DISK}"
+  [ -n "$DISK" ] || { echo "No disk selected, try again"; continue; }
   [[ "$DISK" == /dev/* ]] || DISK="/dev/$DISK"
   if lsblk -d "$DISK" >/dev/null 2>&1; then break; fi
   echo "Invalid disk: $DISK, try again"
@@ -68,38 +83,59 @@ echo "   Confirm this is the DEDICATED NixOS disk. Wiping a Windows disk is IRRE
 read -r -p "Type yes to continue: " confirm
 [ "$confirm" = "yes" ] || { echo "Cancelled"; exit 1; }
 
-# ---------- 2. 生成带真实磁盘路径的 disko 配置 ----------
-sed "s|/dev/nvme0n1|$DISK|" hosts/reyear-nixos/disko.nix > /tmp/3n-disko.nix
+# ---------- 2. 把真实盘径【就地】写入仓库的 disko.nix ----------
+# 不用 /tmp 副本: 第 4 步 nixos-install 求值的是本仓库 flake,
+# 装好系统的 initrd LUKS 解锁配置与 fileSystems 都从这里生成,
+# 必须指向真实 by-id 设备而不是占位符 /dev/nvme0n1。
+DISKO_NIX="hosts/reyear-nixos/disko.nix"
+# 重跑时先还原成仓库原始版本, 保证占位符存在 (live 环境的临时 clone, 安全)
+git checkout -- "$DISKO_NIX" 2>/dev/null || true
+sed -i "s|/dev/nvme0n1|$DISK|" "$DISKO_NIX"
+grep -qF "$DISK" "$DISKO_NIX" || { echo "ERROR: failed to patch device in $DISKO_NIX"; exit 1; }
+echo "Patched $DISKO_NIX -> $DISK"
 
 # ---------- 3. 分区 / 格式化 / 挂载到 /mnt ----------
-# 先 dry-run 验证生成的 disko 配置 (不会动磁盘)
+# 先 dry-run: 只构建 disko 脚本 (能捕获求值错误), 不动磁盘
 echo ""
 echo "=== disko config dry-run validation ==="
-nix run .#disko -- --mode destroy,format,mount --dry-run /tmp/3n-disko.nix
+nix run .#disko -- --mode destroy,format,mount --dry-run "$DISKO_NIX"
 
-# 正式执行 (此处会提示输入两次 LUKS 加密密码)
+# 正式执行: disko 会提示输入两次 LUKS 密码; 两次不一致 disko 会
+# 直接中止 (其内部重试实现有缺陷), 这里包一层整步重试
 echo ""
 echo "=== Partitioning & formatting (disko) ==="
-nix run .#disko -- --mode destroy,format,mount /tmp/3n-disko.nix
+while ! nix run .#disko -- --mode destroy,format,mount "$DISKO_NIX"; do
+  read -r -p "disko failed (passphrase mismatch aborts it). Retry from scratch? [y/N]: " retry
+  [ "$retry" = "y" ] || { echo "Aborted"; exit 1; }
+done
 
 # ---------- 4. 安装系统 ----------
-# --no-root-passwd: 锁住 root; reyear 的密码在下一步交互设置
+# --no-root-passwd: 锁住 root; reyear 的密码哈希在 system.nix (hashedPassword)
 echo ""
 echo "=== Installing system (nixos-install, first build takes a while) ==="
 nixos-install --flake .#reyear-nixos --root /mnt --no-root-passwd
-# reyear 的密码已以哈希形式配置在 system.nix (hashedPassword), 装机即生效
 
-# ---------- 5. 完成提示 ----------
+# ---------- 5. 把本仓库复制进目标系统 ----------
+# nixos-install 不会复制 flake 源码; 不做这步, 重启后
+# nixos-rebuild switch --flake /etc/nixos 无法执行
+echo ""
+echo "=== Copying this repo to /mnt/etc/nixos (so nixos-rebuild works) ==="
+mkdir -p /mnt/etc/nixos
+tar -cf - . | tar -xf - -C /mnt/etc/nixos
+echo "Done."
+
+# ---------- 6. 完成提示 ----------
 cat <<'EOF'
 
 ============================================================
 Installation complete!
   1. Reboot into the new system:      reboot
   2. Log in as user 'reyear' (password hash preconfigured in system.nix)
-  3. (Optional) Enroll TPM auto-unlock to skip the LUKS password at boot
+  3. (Optional) Enroll TPM auto-unlock to skip the LUKS passphrase at boot
      (auto-detects the LUKS device, no UUID needed):
          sudo ./tpm-enroll.sh
      To revoke:  sudo systemd-cryptenroll --wipe-slot=tpm2 <luks-partition>
-  4. Update the system later:  sudo nixos-rebuild switch --flake /etc/nixos
+  4. Update the system later:
+         cd /etc/nixos && sudo nixos-rebuild switch --flake .#reyear-nixos
 ============================================================
 EOF

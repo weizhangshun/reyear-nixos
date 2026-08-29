@@ -39,7 +39,7 @@ git clone https://github.com/OceanReyear/reyear-nixos && cd reyear-nixos
 sudo ./install.sh
 ```
 
-脚本流程：列出磁盘 → 交互选择目标盘（默认最大那块，自动转 by-id）→ 确认清盘 → 交互输入 LUKS 密码（两次）→ disko 分区/格式化/挂载 → nixos-install。
+脚本流程：列出磁盘 -> 交互选择目标盘（默认最大物理盘，自动转 by-id）-> 确认清盘 -> 真实盘径就地写入 disko.nix（disko 分区与 nixos-install 求值共用同一份配置，装出的系统 initrd/挂载点指向真实 by-id 设备）-> disko dry-run 校验 -> disko 分区/格式化/挂载（此时输两次 LUKS 密码，输错可整步重试）-> nixos-install -> 复制本仓库到 /mnt/etc/nixos（保证重启后可 nixos-rebuild）。
 分区方案已提前定好（见 `hosts/reyear-nixos/disko.nix`）：ESP 1G + LUKS2 全盘加密 + btrfs 六子卷（@/@nix/@home/@var/@log/@snapshots），安装时无需再决定。
 
 方式 B — nixos-anywhere（从任意 Linux 远程装机）：
