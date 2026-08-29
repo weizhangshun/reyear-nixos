@@ -68,7 +68,7 @@
   fonts.packages = with pkgs; [
     noto-fonts-cjk-sans
     noto-fonts-cjk-serif
-    noto-fonts-emoji
+    noto-fonts-color-emoji   # unstable 已由 noto-fonts-emoji 更名
     sarasa-gothic        # 更纱黑体: 中英文等宽, 终端利器
   ];
   fonts.fontconfig.defaultFonts = {
