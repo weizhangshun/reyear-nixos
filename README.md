@@ -90,9 +90,10 @@ nix flake update                                 # 先升级锁定版本
 
 > ✅ 选项名已对照 nixpkgs 源码核验（大写键名如 SUBVOLUME / TIMELINE_CREATE；无 enable 选项）。
 
-## 国内网络加速（清华源）
+## 国内网络加速（上海交大源）
 
-二进制缓存已设**清华 TUNA 镜像为首要源**（`mirrors.tuna.tsinghua.edu.cn/nix/store`，与官方 `cache.nixos.org` 同签名，内容一致；注意二进制缓存路径是 `/nix/store`，`/nix-channels/` 是频道与 ISO 的地址）。
+二进制缓存已设**上海交大镜像为首要源**（`mirror.sjtu.edu.cn/nix-channels/store`，与官方 `cache.nixos.org` 同签名，内容一致）。
+> 实测（2026-08）：TUNA **不提供** Nix 二进制缓存镜像，`/nix/store` 与 `/nix-channels/store` 均返回 403，勿再使用；SJTU 实测可用。
 
 可选：让 flake 输入（从 GitHub 拉取 nixpkgs 等源码）也走清华镜像：
 
