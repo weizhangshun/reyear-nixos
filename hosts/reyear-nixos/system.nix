@@ -57,7 +57,10 @@
   i18n.defaultLocale = "zh_CN.UTF-8";
   i18n.supportedLocales = [ "zh_CN.UTF-8/UTF-8" "en_US.UTF-8/UTF-8" ];
   i18n.inputMethod = {
-    type = "fcitx5";                      # 新版 nixpkgs 用 type (enabled 已弃用)
+    # ⚠️ enable 必须显式 true: 它默认 false (只有废弃的 enabled 选项才会隐式开启),
+    #    只设 type 输入法不会被安装/激活 (已对照 nixpkgs input-method/default.nix)
+    enable = true;
+    type = "fcitx5";
     fcitx5.addons = with pkgs; [
       fcitx5-chinese-addons               # 拼音 (默认简体, 开箱即用)
       fcitx5-rime                         # Rime 引擎 (已预置简体 schema, 见 home.nix)
@@ -73,6 +76,7 @@
   ];
   fonts.fontconfig.defaultFonts = {
     sansSerif = [ "Noto Sans CJK SC" "Sarasa UI SC" ];
+    serif = [ "Noto Serif CJK SC" ];
     monospace = [ "Sarasa Mono SC" ];
     emoji = [ "Noto Color Emoji" ];
   };
