@@ -1,6 +1,8 @@
 # 声明式磁盘布局: GPT + LUKS2 全盘加密 + btrfs 子卷
 # 磁盘: install.sh 会自动把 device 替换为所选磁盘; 若用 nixos-anywhere 方式需手动改成 by-id
-{ config, lib, ... }:
+# 签名必须是 { ... }: 而不是 { config, lib, ... }: — disko CLI 调用本文件时
+# 只传 lib/mode/pkgs 等参数, 声明 config 会导致 "called without required argument 'config'"
+{ ... }:
 
 {
   disko.devices.disk.main = {

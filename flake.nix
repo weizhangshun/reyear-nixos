@@ -51,7 +51,7 @@
         ];
       };
 
-      # 供装机时使用: sudo nix run .#disko -- --mode disko ./hosts/reyear-nixos/disko.nix
+      # 供装机时使用: sudo nix run .#disko -- --mode destroy,format,mount ./hosts/reyear-nixos/disko.nix
       packages.${system}.disko = disko.packages.${system}.disko;
 
       # nix fmt 格式化

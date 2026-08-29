@@ -75,12 +75,12 @@ sed "s|/dev/nvme0n1|$DISK|" hosts/reyear-nixos/disko.nix > /tmp/3n-disko.nix
 # 先 dry-run 验证生成的 disko 配置 (不会动磁盘)
 echo ""
 echo "=== disko config dry-run validation ==="
-nix run .#disko -- --mode disko --dry-run /tmp/3n-disko.nix
+nix run .#disko -- --mode destroy,format,mount --dry-run /tmp/3n-disko.nix
 
 # 正式执行 (此处会提示输入两次 LUKS 加密密码)
 echo ""
 echo "=== Partitioning & formatting (disko) ==="
-nix run .#disko -- --mode disko /tmp/3n-disko.nix
+nix run .#disko -- --mode destroy,format,mount /tmp/3n-disko.nix
 
 # ---------- 4. 安装系统 ----------
 # --no-root-passwd: 锁住 root; reyear 的密码在下一步交互设置
