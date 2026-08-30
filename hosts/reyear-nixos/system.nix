@@ -86,28 +86,14 @@
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
-    # priority: 数字越小越优先 (默认 41); 多源含同一包时 nix 优先从数字小的源拉取
+    # 注意: 只能写纯 URL 字符串 (nix.settings 类型限制, 不支持 { url; priority } attrset)。
+    # 优先级 = 各缓存 nix-cache-info 的 Priority 字段 (全为 40) + 列表顺序, 排前面的先命中。
     substituters = [
-      {
-        url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store";   # 清华 TUNA (最优先, 国内加速; 与官方缓存同签名)
-        priority = 5;
-      }
-      {
-        url = "https://mirrors.ustc.edu.cn/nix-channels/store";           # 中国科大 (次优先, TUNA 抽风时接管; 实测可用)
-        priority = 10;
-      }
-      {
-        url = "https://cache.nixos.org";                                 # 官方源 (兜底)
-        priority = 20;
-      }
-      {
-        url = "https://nix-community.cachix.org";                        # nix-community 缓存
-        priority = 40;
-      }
-      {
-        url = "https://noctalia.cachix.org";                             # noctalia 官方缓存
-        priority = 40;
-      }
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA (首要, 国内加速; 与官方缓存同签名)
+      "https://mirrors.ustc.edu.cn/nix-channels/store"            # 中国科大 (兜底, TUNA 抽风时接管)
+      "https://cache.nixos.org"                                   # 官方源
+      "https://nix-community.cachix.org"
+      "https://noctalia.cachix.org"                               # noctalia 官方缓存
     ];
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="

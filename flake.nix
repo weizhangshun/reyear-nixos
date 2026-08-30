@@ -30,25 +30,14 @@
   };
 
   # 装机机/构建机上的 flake 级缓存设置
-  # priority: 数字越小越优先 (TUNA 首要, USTC 兜底, cachix 源最低)
+  # ⚠️ nixConfig 只接受字符串列表 ({ url; priority } attrset 会被 nix 直接拒绝)。
+  # 优先级由列表顺序决定: TUNA 首要, USTC 兜底。
   nixConfig = {
     extra-substituters = [
-      {
-        url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store";   # 清华 TUNA (最优先)
-        priority = 5;
-      }
-      {
-        url = "https://mirrors.ustc.edu.cn/nix-channels/store";            # 中国科大 (次优先)
-        priority = 10;
-      }
-      {
-        url = "https://nix-community.cachix.org";
-        priority = 40;
-      }
-      {
-        url = "https://noctalia.cachix.org";
-        priority = 40;
-      }
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA (首要)
+      "https://mirrors.ustc.edu.cn/nix-channels/store"            # 中国科大 (兜底)
+      "https://nix-community.cachix.org"
+      "https://noctalia.cachix.org"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
