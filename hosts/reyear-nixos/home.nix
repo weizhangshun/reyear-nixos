@@ -61,8 +61,8 @@
 
     // ---- 快捷键 ----
     binds {
-        // 应用
-        Mod+Enter        { spawn "kitty"; }
+        // 应用 (⚠️ 键名必须是 xkbcommon keysym: 回车是 Return 不是 Enter)
+        Mod+Return        { spawn "kitty"; }
         Mod+D            { spawn "fuzzel"; }
         Mod+Shift+E      { quit; }
         Mod+L            { spawn "swaylock"; }
