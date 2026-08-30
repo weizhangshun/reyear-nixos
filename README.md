@@ -90,9 +90,9 @@ nix flake update                                 # 先升级锁定版本
 
 > ✅ 选项名已对照 nixpkgs 源码核验（大写键名如 SUBVOLUME / TIMELINE_CREATE；无 enable 选项）。
 
-## 国内网络加速（TUNA 首要 + SJTU 兜底）
+## 国内网络加速（TUNA 首要 + USTC 兜底）
 
-二进制缓存首要源为**清华 TUNA 镜像**（`mirrors.tuna.tsinghua.edu.cn/nix-channels/store`，与官方 `cache.nixos.org` 同签名，内容一致），上海交大镜像（`mirror.sjtu.edu.cn/nix-channels/store`）作为第二源兜底--两个镜像偶尔会临时 403/超时，互为备份。
+二进制缓存首要源为**清华 TUNA 镜像**（`mirrors.tuna.tsinghua.edu.cn/nix-channels/store`，与官方 `cache.nixos.org` 同签名，内容一致），**中国科大镜像**（`mirrors.ustc.edu.cn/nix-channels/store`，priority=10）作为第二源兜底--两个镜像偶尔会临时 403/超时，互为备份。
 > 注意生效层级：改 `system.nix` 的 substituters 要等 `nixos-rebuild switch` 激活后才写入 `/etc/nix/nix.conf`；想让**本次**重建立刻用新源，需直接改 `/etc/nix/nix.conf` 并 `sudo systemctl restart nix-daemon`。
 
 可选：让 flake 输入（从 GitHub 拉取 nixpkgs 等源码）也走清华镜像：

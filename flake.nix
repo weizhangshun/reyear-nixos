@@ -30,7 +30,7 @@
   };
 
   # 装机机/构建机上的 flake 级缓存设置
-  # priority: 数字越小越优先 (TUNA 首要, SJTU 兜底, cachix 源最低)
+  # priority: 数字越小越优先 (TUNA 首要, USTC 兜底, cachix 源最低)
   nixConfig = {
     extra-substituters = [
       {
@@ -38,7 +38,7 @@
         priority = 5;
       }
       {
-        url = "https://mirror.sjtu.edu.cn/nix-channels/store";             # 上海交大 (次优先)
+        url = "https://mirrors.ustc.edu.cn/nix-channels/store";            # 中国科大 (次优先)
         priority = 10;
       }
       {

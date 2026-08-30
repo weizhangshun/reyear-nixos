@@ -93,7 +93,7 @@
         priority = 5;
       }
       {
-        url = "https://mirror.sjtu.edu.cn/nix-channels/store";           # 上海交大 (次优先, TUNA 抽风时接管)
+        url = "https://mirrors.ustc.edu.cn/nix-channels/store";           # 中国科大 (次优先, TUNA 抽风时接管; 实测可用)
         priority = 10;
       }
       {
