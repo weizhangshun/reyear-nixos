@@ -86,17 +86,33 @@
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
+    # priority: 数字越小越优先 (默认 41); 多源含同一包时 nix 优先从数字小的源拉取
     substituters = [
-      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA 镜像 (首要, 国内加速; 与 cache.nixos.org 同签名)
-      "https://mirror.sjtu.edu.cn/nix-channels/store"             # 上海交大镜像 (兜底, 同签名; 镜像状态会翻转, 互为备份)
-      "https://cache.nixos.org"
-      "https://nix-community.cachix.org"
-      "https://noctalia.cachix.org"   # noctalia 官方二进制缓存, 见官方文档
+      {
+        url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store";   # 清华 TUNA (最优先, 国内加速; 与官方缓存同签名)
+        priority = 5;
+      }
+      {
+        url = "https://mirror.sjtu.edu.cn/nix-channels/store";           # 上海交大 (次优先, TUNA 抽风时接管)
+        priority = 10;
+      }
+      {
+        url = "https://cache.nixos.org";                                 # 官方源 (兜底)
+        priority = 20;
+      }
+      {
+        url = "https://nix-community.cachix.org";                        # nix-community 缓存
+        priority = 40;
+      }
+      {
+        url = "https://noctalia.cachix.org";                             # noctalia 官方缓存
+        priority = 40;
+      }
     ];
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpUxNFQsBRglJzxWPp3dkU4="
     ];
   };
   nixpkgs.config.allowUnfree = true;

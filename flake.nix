@@ -30,12 +30,25 @@
   };
 
   # 装机机/构建机上的 flake 级缓存设置
+  # priority: 数字越小越优先 (TUNA 首要, SJTU 兜底, cachix 源最低)
   nixConfig = {
     extra-substituters = [
-      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA 镜像 (首要; 与 cache.nixos.org 同签名)
-      "https://mirror.sjtu.edu.cn/nix-channels/store"             # 上海交大镜像 (兜底, 同签名; 两个镜像状态会翻转, 互为备份)
-      "https://nix-community.cachix.org"
-      "https://noctalia.cachix.org"
+      {
+        url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store";   # 清华 TUNA (最优先)
+        priority = 5;
+      }
+      {
+        url = "https://mirror.sjtu.edu.cn/nix-channels/store";             # 上海交大 (次优先)
+        priority = 10;
+      }
+      {
+        url = "https://nix-community.cachix.org";
+        priority = 40;
+      }
+      {
+        url = "https://noctalia.cachix.org";
+        priority = 40;
+      }
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
