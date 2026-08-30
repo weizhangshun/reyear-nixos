@@ -10,7 +10,10 @@
   # 文档: https://docs.noctalia.dev/noctalia/getting-started/nixos/
   # 说明: 启动由 niri 的 spawn-at-startup 负责 (compositor 启动是官方推荐方式);
   #       声明式 settings (主题/壁纸) 在 home.nix 的 home 模块里
-  imports = [ inputs.noctalia.nixosModules.default ];
+  imports = [
+    inputs.noctalia.nixosModules.default
+    inputs.noctalia-greeter.nixosModules.default
+  ];
   programs.noctalia = {
     enable = true;
     # 自动启用 NetworkManager / Bluetooth / UPower / 电源配置服务 (与 system.nix 一致, 幂等)
@@ -27,13 +30,17 @@
   # Chromium/Electron 系应用默认走 Wayland (VS Code / 微信等)
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
-  # ================= 显示管理器 =================
-  # niri 是纯 Wayland 桌面: 用 SDDM 原生 Wayland 后端 (无需 X server, 满足 SDDM 断言)
-  services.displayManager.sddm = {
+  # ================= 登录器: greetd + Noctalia Greeter (官方) =================
+  # Noctalia 官方 greeter (github.com/noctalia-dev/noctalia-greeter):
+  # 自带 wlroots 合成器与 session 启动器, 视觉与 Noctalia Shell 一致;
+  # 模块自动启用 greetd + accounts-daemon (登录界面显示用户头像)
+  programs.noctalia-greeter = {
     enable = true;
-    wayland.enable = true;
+    settings = {
+      session.default = "niri";
+      keyboard.layout = "us";
+    };
   };
-  # 备选: greetd + tuigreet, 或 Noctalia Greeter (https://docs.noctalia.dev/greeter/)
 
   programs.dconf.enable = true;
 

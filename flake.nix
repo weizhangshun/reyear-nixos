@@ -21,6 +21,12 @@
       # ⚠️ 不要 follow nixpkgs: 会改变 derivation hash, 导致二进制缓存全部失效
       url = "github:noctalia-dev/noctalia/cachix";
     };
+
+    noctalia-greeter = {
+      # 官方登录器 (greetd greeter): 独立仓库, 自带 NixOS 模块
+      url = "github:noctalia-dev/noctalia-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   # 装机机/构建机上的 flake 级缓存设置
