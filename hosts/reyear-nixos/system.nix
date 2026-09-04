@@ -4,8 +4,6 @@
 {
   # ================= 内核: 最新 =================
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  # 可选: 追求低延迟换 pkgs.linuxPackages_xanmod / pkgs.linuxPackages_cachyos
-  # ⚠️ 最新内核 + 系统更新后若起不来: 在 boot 菜单选上一个条目, 再 nixos-rebuild switch --rollback
 
   # ================= 引导: systemd-boot + systemd initrd =================
   # systemd initrd 是 LUKS + TPM 自动解锁的前提
@@ -16,8 +14,8 @@
 
   # ================= 硬件 (Intel Core Ultra 7 155H / Arc iGPU) =================
   hardware.graphics.enable = true;
-  hardware.graphics.extraPackages = with pkgs; [ intel-media-driver ];   # VA-API 硬解
-  hardware.cpu.intel.updateMicrocode = true;                             # 别忘微码
+  hardware.graphics.extraPackages = with pkgs; [ intel-media-driver ];  
+  hardware.cpu.intel.updateMicrocode = true;                            
 
   # ================= 网络 =================
   networking.hostName = "reyear-nixos";
@@ -47,7 +45,7 @@
   # 可选: 自动更新 (unstable 有风险, 默认关闭; 启用前确保有回滚手段)
   # system.autoUpgrade = {
   #   enable = true;
-  #   flake = "github:OceanReyear/reyear-nixos";   # 需推到 GitHub, 本地路径不适用
+  #   flake = "github:OceanReyear/reyear-nixos";
   #   dates = "weekly";
   #   allowReboot = false;
   # };
@@ -57,14 +55,11 @@
   i18n.defaultLocale = "zh_CN.UTF-8";
   i18n.supportedLocales = [ "zh_CN.UTF-8/UTF-8" "en_US.UTF-8/UTF-8" ];
   i18n.inputMethod = {
-    # ⚠️ enable 必须显式 true: 默认 false (只有废弃的 enabled 选项才隐式开启)
     enable = true;
     type = "fcitx5";
     fcitx5.addons = with pkgs; [
-      # fcitx5-chinese-addons 只在 qt6Packages 作用域下 (不在顶层/by-name),
-      # 顶层引用 pkgs.fcitx5-chinese-addons 会报 attribute missing
-      qt6Packages.fcitx5-chinese-addons    # 拼音 (默认简体, 开箱即用)
-      fcitx5-rime                          # Rime 引擎 (by-name 顶层可用; 简体 schema 见 home.nix)
+      qt6Packages.fcitx5-chinese-addons    
+      fcitx5-rime                         
     ];
   };
 
@@ -72,8 +67,8 @@
   fonts.packages = with pkgs; [
     noto-fonts-cjk-sans
     noto-fonts-cjk-serif
-    noto-fonts-color-emoji   # unstable 已由 noto-fonts-emoji 更名
-    sarasa-gothic        # 更纱黑体: 中英文等宽, 终端利器
+    noto-fonts-color-emoji
+    sarasa-gothic
   ];
   fonts.fontconfig.defaultFonts = {
     sansSerif = [ "Noto Sans CJK SC" "Sarasa UI SC" ];
@@ -86,11 +81,9 @@
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
-    # 注意: 只能写纯 URL 字符串 (nix.settings 类型限制, 不支持 { url; priority } attrset)。
-    # 优先级 = 各缓存 nix-cache-info 的 Priority 字段 (全为 40) + 列表顺序, 排前面的先命中。
     substituters = [
-      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA (首要, 国内加速; 与官方缓存同签名)
-      "https://mirrors.ustc.edu.cn/nix-channels/store"            # 中国科大 (兜底, TUNA 抽风时接管)
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"   # 清华 TUNA
+      "https://mirrors.ustc.edu.cn/nix-channels/store"            # 中国科大
       "https://cache.nixos.org"                                   # 官方源
       "https://nix-community.cachix.org"
       "https://noctalia.cachix.org"                               # noctalia 官方缓存
@@ -106,7 +99,6 @@
   # ================= 用户 =================
   users.users.reyear = {
     isNormalUser = true;
-    # 密码以 sha512crypt 哈希存储 (passlib 生成); 建议装机后 passwd 更换 (曾短暂公开, 仓库已转私密)
     hashedPassword = "$6$rounds=656000$kWnXXPCaFTnHgfa.$RJIwCzNOBVhtgJw8ZcBzb98y2fxC5AG.JyoY6.i7IFE.m1gc0f9K/UtPw2F.3bLTr8OUk3INuhMxjNasAYQ56.";
     extraGroups = [ "wheel" "networkmanager" "video" "audio" ];
   };
