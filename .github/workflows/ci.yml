@@ -11,13 +11,13 @@ jobs:
     permissions:
       contents: write   # 允许把生成的 flake.lock 提交回仓库
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v16
 
-      - name: Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v9
+      # magic-nix-cache 已移除: v9 起强制 FlakeHub 注册, 未注册时缓存静默失效;
+      # 冷跑约多花 1-2 分钟, 换取零外部依赖
 
       # 核心验证: 评估整个 flake (nixos 配置 + home-manager + noctalia + disko)
       # 会捕获类型错误/不存在的选项/求值错误
@@ -34,6 +34,12 @@ jobs:
             tail -120 /tmp/flake-check.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          # 失败时把 error 行提升为 annotations, 无需仓库权限也能从 API 看到原因
+          if [ $status -ne 0 ]; then
+            grep -E '^error' /tmp/flake-check.log | tail -10 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+          fi
           exit $status
 
       # 首次运行会生成 flake.lock; 若有变化则提交回仓库 (实现可复现构建)

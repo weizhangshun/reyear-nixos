@@ -43,11 +43,11 @@
   zramSwap.algorithm = "zstd";
 
   # ================= 虚拟化: KVM / libvirt (镜像存 @vm 子卷) =================
+  # OVMF (UEFI 固件) 已随 QEMU 自动分发, 无需配置 (qemu.ovmf 选项已在新 nixpkgs 移除)
   virtualisation.libvirtd = {
     enable = true;
     qemu = {
       package = pkgs.qemu_kvm;     # 只带 KVM 硬件加速, 闭包小; 需模拟别的架构时换 qemu_full
-      ovmf.enable = true;          # UEFI 虚拟机 (现代系统安装需要)
       swtpm.enable = true;         # vTPM, Windows 11 虚拟机必需
     };
   };
