@@ -10,12 +10,13 @@ nixos-unstable / flake / home-manager / btrfs / LUKS+TPM / 最新内核 / 中文
 
 ```
 ├── flake.nix                    # 唯一入口 (inputs: nixpkgs-unstable, home-manager, disko, noctalia)
+├── background/                  # 壁纸库 (部署到 ~/.local/share/backgrounds, Noctalia 壁纸面板切换)
 ├── install.sh                   # 一键安装脚本 (live 环境运行)
 ├── tpm-enroll.sh                # TPM 自动解锁注册 (自动检测, 无需填 UUID)
 └── hosts/reyear-nixos/
     ├── default.nix              # 入口: 汇聚模块 + 启用 home-manager
     ├── disko.nix                # 磁盘: GPT + LUKS2 + btrfs 子卷 (声明式)
-    ├── system.nix               # 内核/引导/硬件/时区/语言/输入法/字体/Nix
+    ├── system.nix               # 内核/引导/硬件/时区/语言/输入法/字体/虚拟化/Docker/Nix
     ├── desktop.nix              # niri + Noctalia + Wayland 配套
     ├── home.nix                 # home-manager: niri 配置 / Rime 简体 / git
     └── snapshot.nix             # 可选: snapper 快照 (默认不启用)
@@ -40,7 +41,7 @@ sudo ./install.sh
 ```
 
 脚本流程：列出磁盘 -> 交互选择目标盘（默认最大物理盘，自动转 by-id）-> 确认清盘 -> 真实盘径就地写入 disko.nix（disko 分区与 nixos-install 求值共用同一份配置，装出的系统 initrd/挂载点指向真实 by-id 设备）-> disko dry-run 校验 -> disko 分区/格式化/挂载（此时输两次 LUKS 密码，输错可整步重试）-> nixos-install -> 复制本仓库到 /mnt/etc/nixos（保证重启后可 nixos-rebuild）。
-分区方案已提前定好（见 `hosts/reyear-nixos/disko.nix`）：ESP 1G + LUKS2 全盘加密 + btrfs 六子卷（@/@nix/@home/@var/@log/@snapshots），安装时无需再决定。
+分区方案已提前定好（见 `hosts/reyear-nixos/disko.nix`）：ESP 1G + LUKS2 全盘加密 + btrfs 九子卷（@/@nix/@home/@var/@log/@snapshots/@vm/@docker/@db），安装时无需再决定。大 IO 子卷单独调优：`@vm`→`/var/lib/libvirt/images`、`@db`→`/var/lib/postgresql` 均 nodatacow（关压缩/CoW）；`@docker`→`/var/lib/docker` 保留压缩；三者均不参与快照。
 
 方式 B — nixos-anywhere（从任意 Linux 远程装机）：
 

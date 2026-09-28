@@ -1,2 +1,8 @@
 # 强制 LF 换行 (install.sh 等 bash 脚本不能有 CRLF)
 * text=auto eol=lf
+
+# 壁纸等二进制文件: 关闭任何换行/编码转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary

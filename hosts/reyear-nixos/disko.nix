@@ -45,6 +45,17 @@
                 "@log" =       { mountpoint = "/var/log";    mountOptions = [ "compress=zstd" "noatime" ]; };
                 # 快照挂载点 (后续接 snapper / btrbk)
                 "@snapshots" = { mountpoint = "/.snapshots"; mountOptions = [ "compress=zstd" "noatime" ]; };
+                # 虚拟机镜像: 挂在 libvirt 默认存储路径; 关压缩关 CoW
+                # (镜像是大块随机写, 压缩白耗 CPU, CoW 拖出碎片; nodatacow 是
+                #  btrfs 放 VM 磁盘的标准姿势, 内核 4.13+ 起各子卷挂载选项独立生效)
+                "@vm" =       { mountpoint = "/var/lib/libvirt/images"; mountOptions = [ "nodatacow" "compress=no" "noatime" ]; };
+                # Docker 数据 (镜像层/容器可写层/volumes): 高频变动且可再生,
+                # 不参与快照; 镜像层一次写入多次读, 保留压缩与 CoW 反而省空间
+                "@docker" =   { mountpoint = "/var/lib/docker";          mountOptions = [ "compress=zstd" "noatime" ]; };
+                # 本机数据库 (PostgreSQL 默认数据路径): WAL 随机写 + fsync 密集,
+                # CoW 造成写放大与碎片 -> nodatacow (dev 库可重建, 舍校验换性能;
+                # 容器里的数据库落 @docker, 不在此)
+                "@db" =       { mountpoint = "/var/lib/postgresql";      mountOptions = [ "nodatacow" "compress=no" "noatime" ]; };
               };
             };
           };

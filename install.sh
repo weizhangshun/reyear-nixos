@@ -10,6 +10,8 @@
 #    ESP 1G (vfat, /boot) + LUKS2 全盘加密 + btrfs 子卷:
 #    @ -> /   @nix -> /nix   @home -> /home
 #    @var -> /var   @log -> /var/log   @snapshots -> /.snapshots
+#    @vm -> /var/lib/libvirt/images  @db -> /var/lib/postgresql   (nodatacow)
+#    @docker -> /var/lib/docker   (保留压缩)
 #
 #  运行时输出一律使用英文: NixOS 安装盘的裸 TTY 字体不含 CJK 字形,
 #  中文会显示为方块 (豆腐块), 英文保证任何控制台可读。

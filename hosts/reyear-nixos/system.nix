@@ -42,6 +42,26 @@
   zramSwap.memoryPercent = 50;
   zramSwap.algorithm = "zstd";
 
+  # ================= 虚拟化: KVM / libvirt (镜像存 @vm 子卷) =================
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;     # 只带 KVM 硬件加速, 闭包小; 需模拟别的架构时换 qemu_full
+      ovmf.enable = true;          # UEFI 虚拟机 (现代系统安装需要)
+      swtpm.enable = true;         # vTPM, Windows 11 虚拟机必需
+    };
+  };
+  programs.virt-manager.enable = true;   # 图形管理器 (GUI)
+
+  # ================= Docker (容器; 数据落 @docker 子卷) =================
+  virtualisation.docker = {
+    enable = true;
+    autoPrune.enable = true;   # 每周自动清理无容器引用的镜像/构建缓存, 防膨胀
+  };
+  # 本机原生数据库 (数据库课程/毕设): 开启即用, 数据自动落在 @db 子卷 (nodatacow)
+  # services.postgresql.enable = true;
+  # 其他原生 DB (mysql/mongo) 建议跑 docker (落 @docker), 或自设 dataDir 指进 @db
+
   # 可选: 自动更新 (unstable 有风险, 默认关闭; 启用前确保有回滚手段)
   # system.autoUpgrade = {
   #   enable = true;
@@ -100,7 +120,7 @@
   users.users.reyear = {
     isNormalUser = true;
     hashedPassword = "$6$rounds=656000$kWnXXPCaFTnHgfa.$RJIwCzNOBVhtgJw8ZcBzb98y2fxC5AG.JyoY6.i7IFE.m1gc0f9K/UtPw2F.3bLTr8OUk3INuhMxjNasAYQ56.";
-    extraGroups = [ "wheel" "networkmanager" "video" "audio" ];
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "libvirtd" "docker" ];  # libvirtd/docker: 免 sudo 管虚拟机与容器
   };
 
   # 远程管理 (nixos-anywhere 装机依赖 SSH)

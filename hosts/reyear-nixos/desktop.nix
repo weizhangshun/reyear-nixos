@@ -61,7 +61,7 @@
     wf-recorder           # 录屏
     mako                  # 通知
     swaylock              # 锁屏
-    swaybg                # 壁纸
+    # 壁纸由 Noctalia 壁纸模块负责 (home.nix settings.wallpaper), 不再需要 swaybg
     fuzzel                # 应用启动器
     swayidle              # 息屏
     brightnessctl         # 屏幕亮度

@@ -1,6 +1,12 @@
 # home-manager: 用户级程序与 dotfiles (niri 配置 / Rime 简体 / git ...)
 { config, lib, pkgs, inputs, ... }:
 
+let
+  # 壁纸库部署位置: 仓库 background/ 经 home.file 链接到这里
+  wallpaperDir = "${config.home.homeDirectory}/.local/share/backgrounds";
+  # 默认壁纸 misty-forest (晨雾山林, 偏暗色调配 Catppuccin dark); 可在 Noctalia 壁纸面板随时换
+  defaultWallpaper = "misty-forest.png";
+in
 {
   # ============ Noctalia (home 模块: 声明式 settings) ============
   # 生成 ~/.config/noctalia/config.toml; 不想要声明式设置就把 settings 删掉
@@ -14,13 +20,41 @@
         source = "builtin";
         builtin = "Catppuccin";
       };
-      # wallpaper = { enabled = true; default.path = "/home/reyear/Pictures/wallpaper.jpg"; };
+      # 壁纸: Noctalia 自带模块 (替代 swaybg), 图形面板可浏览/切换/收藏/轮换
+      wallpaper = {
+        enabled = true;
+        fill_mode = "crop";                 # 铺满裁边, 等价原 swaybg -m fill
+        directory = wallpaperDir;           # 面板浏览目录 = 部署出来的壁纸库
+        default.path = "${wallpaperDir}/${defaultWallpaper}";
+      };
     };
   };
 
   home.username = "reyear";
   home.homeDirectory = "/home/reyear";
   home.stateVersion = "26.05";
+
+  # ============ 壁纸库: 仓库 background/ -> ~/.local/share/backgrounds ============
+  # 整目录 store 符号链接 (只读, 跨代去重); Noctalia 壁纸面板浏览的就是这里
+  home.file.".local/share/backgrounds".source = ../../background;
+
+  # ============ XDG 用户目录: 全小写 (声明式替代 ~/Documents 等大写默认) ============
+  # 生成 ~/.config/user-dirs.dirs; GLib/GTK/Noctalia/Firefox 等应用读它定位
+  # documents/pictures 等目录, 而不是各自硬编码 ~/Documents。
+  # createDirectories: 激活时自动补建缺失目录。
+  # 注意: 老系统上已存在的大写目录 (~/Documents 等) 不会自动迁移, 数据需手动 mv;
+  # publicShare/templates 极少用到, 保持 home-manager 默认值不在此声明。
+  xdg.enable = true;
+  xdg.userDirs = {
+    enable = true;
+    createDirectories = true;
+    desktop = "${config.home.homeDirectory}/desktop";
+    documents = "${config.home.homeDirectory}/documents";
+    download = "${config.home.homeDirectory}/downloads";
+    music = "${config.home.homeDirectory}/music";
+    pictures = "${config.home.homeDirectory}/pictures";
+    videos = "${config.home.homeDirectory}/videos";
+  };
 
   # ============ 用户级程序 (按需添加) ============
   home.packages = with pkgs; [
@@ -55,9 +89,9 @@
     }
 
     // ---- 开机自启 ----
+    // 壁纸已交给 Noctalia 壁纸模块 (settings.wallpaper), 不再 swaybg 自启
     spawn-at-startup "fcitx5" "-d"                 // 中文输入法
     spawn-at-startup "noctalia"                    // 桌面外壳 (compositor 启动是官方推荐, 勿用 systemd 服务)
-    spawn-at-startup "swaybg" "-i" "/home/reyear/Pictures/wallpaper.jpg" "-m" "fill"
 
     // ---- 快捷键 ----
     binds {
