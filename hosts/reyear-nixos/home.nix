@@ -72,6 +72,27 @@ in
 
   programs.kitty.enable = true;
 
+  # ============ Shell: bash (HM 托管 .bashrc) + Starship 提示符 ============
+  # Starship: git 分支/状态, nix dev shell, python venv 等状态一目了然;
+  # 配置避开 Nerd Font 字形 (分支符号置空), 系统字体即可完整渲染
+  programs.bash.enable = true;
+  programs.starship = {
+    enable = true;
+    settings = {
+      add_newline = false;              # 提示符间不留空行, 更紧凑
+      git_branch.symbol = "";            # 分支只显示名字
+      directory.truncation_length = 3;   # 路径最多 3 级
+    };
+  };
+
+  # ============ direnv: 项目级开发环境 ============
+  # 项目里放 shell.nix / flake.nix, cd 进入自动加载 (python/node/gcc 版本隔离);
+  # nix-direnv 带缓存, 重复进入秒开
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
+
   # ============ niri 配置 (kdl 语法) ============
   # 完整选项见 https://yalter.github.io/niri/Configuration/
   # ⚠️ KDL 注释是 //, 不支持 # (home.nix 里的 # 只能出现在 nix 层, KDL 文本内必须用 //)

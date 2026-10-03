@@ -1,0 +1,197 @@
+name: Audit Tools for Deprecation
+
+# Catches the class of staleness that `nix flake update` CANNOT: a tool being
+# deprecated, unmaintained, or superseded by a DIFFERENT tool (e.g. Gemini CLI
+# -> Antigravity CLI). Version bumps of flake inputs are handled by
+# update-flake.yml.
+#
+# Two layers:
+#   1. Deterministic, authoritative signals (need no model): npm deprecation
+#      flags, GitHub repo archival, release-tag drift for pinned fetchurl bins.
+#      These ALWAYS run and, on their own, drive issue creation.
+#   2. GitHub Copilot judges SUPERSESSION and writes a nicer summary, via the
+#      Copilot CLI + actions/ai-inference@v3. This layer is allowed to fail
+#      without failing the job; the issue then falls back to layer 1.
+#
+# AUTH: the free GitHub Models endpoint was retired 2026-07-30; ai-inference@v3
+# shells out to the GitHub Copilot CLI. This workflow authenticates the CLI with
+# the built-in GITHUB_TOKEN via the `copilot-requests: write` permission — no PAT
+# or repo secret required. Prerequisite: the account/org providing the Copilot
+# seat must have the Copilot CLI policy enabled ("Allow use of Copilot CLI").
+# If it isn't, the Copilot step fails gracefully and layer 1 still runs.
+# `model: ""` lets the CLI pick an org-allowed default (a pinned model like
+# gpt-4.1 may not be enabled for every plan). Opens/updates one `tool-audit` issue.
+
+on:
+  schedule:
+    # 10:00 UTC on the 1st of every month
+    - cron: "0 10 1 * *"
+  workflow_dispatch: # Allow manual triggering
+
+concurrency:
+  group: audit-tools
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      copilot-requests: write # lets the built-in GITHUB_TOKEN make Copilot requests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Gather deterministic signals
+        id: gather
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # findings.md = clean, human-readable deterministic report (also the
+          # fallback issue body). prompt.md = findings wrapped with instructions
+          # for the Copilot layer.
+          : > findings.md
+
+          echo "### npm packages (installed at Home Manager activation)" >> findings.md
+          for pkg in $(grep -rhoE 'packageName = "[^"]+"' home | sed -E 's/.*"([^"]+)".*/\1/' | sort -u); do
+            latest=$(npm view "$pkg" version 2>/dev/null || echo "unknown")
+            dep=$(npm view "$pkg" deprecated 2>/dev/null || echo "")
+            modified=$(npm view "$pkg" time.modified 2>/dev/null || echo "unknown")
+            if [ -n "$dep" ]; then
+              echo "- **$pkg** — latest \`$latest\`, last publish $modified — ⚠️ DEPRECATED: $dep" >> findings.md
+            else
+              echo "- $pkg — latest \`$latest\`, last publish $modified — ✅ no deprecation flag" >> findings.md
+            fi
+          done
+
+          echo "" >> findings.md
+          echo "### Flake inputs (GitHub repos)" >> findings.md
+          for repo in $(grep -oE 'github:[^/"]+/[^/"]+' flake.nix | sed 's#github:##' | sort -u); do
+            info=$(gh api "repos/$repo" --jq '"\(.archived)|\(.pushed_at)"' 2>/dev/null || echo "unknown|unknown")
+            archived=${info%%|*}; pushed=${info##*|}
+            if [ "$archived" = "true" ]; then
+              echo "- **$repo** — ⚠️ REPOSITORY ARCHIVED (last push $pushed)" >> findings.md
+            elif [ "$archived" = "unknown" ]; then
+              # Don't let a failed/rate-limited API call masquerade as "active".
+              echo "- **$repo** — ⚠️ COULD NOT VERIFY (GitHub API error or rate limit)" >> findings.md
+            else
+              echo "- $repo — ✅ active (last push $pushed)" >> findings.md
+            fi
+          done
+
+          echo "" >> findings.md
+          echo "### Pinned release binaries (fetchurl)" >> findings.md
+          # Match .../<owner>/<repo>/releases/download/<tag>/... in Nix sources only
+          grep -rhoE --include='*.nix' --exclude-dir='.git' 'github\.com/[^/]+/[^/]+/releases/download/[^/]+' . 2>/dev/null \
+            | sed -E 's#.*github\.com/([^/]+)/([^/]+)/releases/download/([^/]+).*#\1/\2 \3#' \
+            | sort -u | while read -r repo pinned; do
+              latest_tag=$(gh api "repos/$repo/releases/latest" --jq '.tag_name' 2>/dev/null || echo "unknown")
+              if [ "$latest_tag" != "unknown" ] && [ "$latest_tag" != "$pinned" ]; then
+                echo "- **$repo** — pinned \`$pinned\`, latest release \`$latest_tag\` — ⚠️ BEHIND" >> findings.md
+              else
+                echo "- $repo — pinned \`$pinned\` (latest \`$latest_tag\`) — ✅" >> findings.md
+              fi
+          done
+
+          echo "" >> findings.md
+          echo "### Other pinned tools (supersession — judge by knowledge)" >> findings.md
+          nodejs_pins=$(grep -rhoE 'nodejs_[0-9]+' home 2>/dev/null | sort -u | tr '\n' ' ')
+          [ -n "$nodejs_pins" ] && echo "- Pinned Node.js major(s): \`$nodejs_pins\`" >> findings.md
+
+          # A warning marker (⚠️) anywhere means human attention is needed,
+          # independent of whether the Copilot layer runs.
+          if grep -q '⚠️' findings.md; then hard=1; else hard=0; fi
+          echo "hard_signal=$hard" >> "$GITHUB_OUTPUT"
+
+          # Wrap findings with instructions for the Copilot layer.
+          {
+            echo "# Tool audit input"
+            echo
+            echo "Assess the tools below for DEPRECATION and SUPERSESSION only."
+            echo "The ⚠️ markers are pre-computed and authoritative. Your job:"
+            echo "(1) briefly confirm/explain each ⚠️, and (2) using your own"
+            echo "knowledge, flag any tool SUPERSEDED by a different recommended"
+            echo "tool. Be conservative — do not invent deprecations."
+            echo
+            echo "Reply in GitHub-flavored markdown. The VERY FIRST line must be"
+            echo "exactly 'STATUS: ACTION_NEEDED' or 'STATUS: OK'. Then a short"
+            echo "table (Tool | Source | Finding | Recommendation), then details."
+            echo
+            cat findings.md
+          } > prompt.md
+          echo "----- findings.md -----"; cat findings.md
+
+      - name: Install GitHub Copilot CLI
+        continue-on-error: true # transient npm failure must not fail the audit
+        run: npm install -g @github/copilot
+
+      - name: Assess with GitHub Copilot
+        id: ai
+        continue-on-error: true # an inference error must not block issue creation
+        # v3+ is Copilot-only (shells out to the Copilot CLI installed above).
+        # Do NOT use @v1/@v2 — those still target the retired GitHub Models
+        # endpoint (models.github.ai) and fail with HTTP 410.
+        uses: actions/ai-inference@v3
+        env:
+          # Built-in Actions token; authorized for Copilot by the
+          # `copilot-requests: write` permission above. No PAT/secret needed.
+          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: "" # let the Copilot CLI pick an org-allowed default
+          prompt-file: prompt.md
+
+      - name: Open or update audit issue
+        if: always() # run regardless of the Copilot layer's outcome
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HARD_SIGNAL: ${{ steps.gather.outputs.hard_signal }}
+          AI_RESPONSE: ${{ steps.ai.outputs.response }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+
+          # Prefer the Copilot summary; fall back to the deterministic findings
+          # if the Copilot layer was unavailable or errored (empty response).
+          if [ -n "${AI_RESPONSE//[$'\n\t ']/}" ]; then
+            printf '%s\n' "$AI_RESPONSE" > report.md
+          else
+            {
+              echo "## 🔎 Tool freshness audit (deterministic only)"
+              echo
+              echo "_Copilot assessment unavailable (inference error or Copilot CLI policy disabled), so this report is the deterministic signals only; supersession was not judged._"
+              echo
+              cat findings.md
+            } > report.md
+          fi
+          printf '\n\n---\n_Automated tool audit — [run log](%s)_\n' "$RUN_URL" >> report.md
+
+          action_needed=0
+          if [ "$HARD_SIGNAL" = "1" ]; then action_needed=1; fi
+          if head -n1 report.md | grep -q 'ACTION_NEEDED'; then action_needed=1; fi
+
+          existing=$(gh issue list --label tool-audit --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ "$action_needed" = "1" ]; then
+            gh label create tool-audit --color BFDADC --description "Automated tool deprecation audit" --force || true
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body-file report.md
+              gh issue comment "$existing" --body "Re-audited: still needs attention (see updated body). Run: $RUN_URL"
+              echo "Updated issue #$existing"
+            else
+              gh issue create --title "Tool audit: action needed" --label tool-audit --body-file report.md
+              echo "Opened new audit issue"
+            fi
+          else
+            echo "No action needed."
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "Latest audit is clean — closing. Run: $RUN_URL"
+              gh issue close "$existing"
+            fi
+          fi

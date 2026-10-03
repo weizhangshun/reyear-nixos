@@ -116,6 +116,17 @@
   };
   nixpkgs.config.allowUnfree = true;
 
+  # 自动垃圾回收: 每日清掉 14 天前的旧代闭包 (追 unstable 高频 rebuild,
+  # store 只增不减; 窗口内的代仍可回滚)
+  nix.gc = {
+    automatic = true;
+    options = "--delete-older-than 14d";
+    persistent = true;              # 定时器被关机错过时, 开机补跑
+  };
+
+  # 跑未打补丁的动态链接二进制 (下载的课程工具/闭源软件/AppImage 免 patchelf)
+  programs.nix-ld.enable = true;
+
   # ================= 用户 =================
   users.users.reyear = {
     isNormalUser = true;

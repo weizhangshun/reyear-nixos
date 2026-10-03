@@ -1,0 +1,4 @@
+google-chrome
+paru
+sddm-sugar-candy-git
+visual-studio-code-bin

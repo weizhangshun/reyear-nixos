@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "__HOME__/.nix-profile/bin/context7-mcp-server",
+      "args": [],
+      "env": {}
+    },
+    "nixos": {
+      "command": "nix",
+      "args": ["run", "github:utensils/mcp-nixos", "--"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "env": {}
+    },
+    "shadcn-ui-mcp-server": {
+      "type": "stdio",
+      "command": "__HOME__/.nix-profile/bin/shadcn-ui-mcp-server",
+      "args": [],
+      "env": {}
+    },
+    "testing-sensei": {
+      "type": "stdio",
+      "command": "__HOME__/.nix-profile/bin/mcp-testing-sensei",
+      "args": [],
+      "env": {}
+    }
+  }
+}

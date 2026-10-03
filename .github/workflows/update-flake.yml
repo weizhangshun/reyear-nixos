@@ -1,0 +1,76 @@
+name: Update Flake Inputs
+
+# 每周一 09:00 UTC (北京时间 17:00) 自动更新 flake 输入;
+# 验证通过后开 PR, 人工确认合并 —— 小步快跑, 避免 lock 放到不能升
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:   # 允许手动触发
+
+# 防止上一次运行未结束时重叠触发
+concurrency:
+  group: flake-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Update flake inputs
+        run: nix flake update
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # 本仓库全声明式 (disko + 单 nixosConfiguration, 无机器特定文件),
+      # 可以在 CI 里完整验证 —— 这一步过了, PR 就是可合并状态
+      - name: Validate (nix flake check)
+        if: steps.changes.outputs.changed == 'true'
+        run: nix flake check
+
+      - name: Generate update summary
+        if: steps.changes.outputs.changed == 'true'
+        id: summary
+        run: |
+          {
+            echo 'body<<EOF'
+            echo '每周自动更新 flake 输入 (已通过 `nix flake check` 验证)。'
+            echo ''
+            echo '## 更新的输入'
+            echo '```'
+            nix flake metadata --json | jq -r '.locks.nodes | to_entries[] | select(.value.locked.rev) | "\(.key): \(.value.locked.rev[0:7])"'
+            echo '```'
+            echo ''
+            echo '## 合并前检查'
+            echo '- [ ] 浏览 flake.lock 变更'
+            echo '- [ ] 本机验证: `sudo nixos-rebuild switch --flake .#reyear-nixos`'
+            echo ''
+            echo '注: GITHUB_TOKEN 创建的 PR 不会再触发 CI workflow, 但 `nix flake check` 已在上方步骤跑过。'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update flake inputs"
+          title: "chore: update flake inputs"
+          body: ${{ steps.summary.outputs.body }}
+          branch: automated/flake-update
+          delete-branch: true
+          add-paths: flake.lock

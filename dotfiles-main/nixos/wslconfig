@@ -1,0 +1,28 @@
+# WSL2 host settings. This file is read by the Windows side of WSL, not by
+# the Linux VM, so it cannot be managed by Nix/Home Manager. Copy it to
+# %USERPROFILE%\.wslconfig (e.g. C:\Users\<you>\.wslconfig), then run
+# `wsl --shutdown` from PowerShell for it to take effect.
+#
+# Reference: https://learn.microsoft.com/windows/wsl/wsl-config#wslconfig
+
+[wsl2]
+
+# Cap VM RAM. Roughly 50% of host RAM matches the WSL default; adjust to your
+# machine.
+memory=16GB
+
+# autoMemoryReclaim has lived under [experimental] since it was added in WSL
+# 1.3.10 (2023) and was never promoted to [wsl2], unlike dnsTunneling,
+# firewall, networkingMode and autoProxy (promoted in 2.0.5). Placing it under
+# [wsl2] fails with "Unknown key" and the setting is silently not applied.
+[experimental]
+
+# Gradually return unused page cache to Windows. Without this, a long-running
+# VM under heavy I/O fragments its memory until the kernel can no longer
+# allocate the contiguous 512 KB ring buffer each new hv_sock channel needs.
+# Symptom: new WSL terminals fail with "Wsl/Service/0x8007274c" while
+# existing sessions keep working, and `journalctl -k` shows
+# "page allocation failure: order:7 ... hvs_probe". Only `wsl --shutdown`
+# recovers from that state; this setting prevents it from building up.
+# The in-VM half of the fix (vm.min_free_kbytes) lives in configuration.nix.
+autoMemoryReclaim=gradual

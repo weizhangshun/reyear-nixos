@@ -4,7 +4,7 @@
 
 nixos-unstable / flake / home-manager / btrfs / LUKS+TPM / 最新内核 / 中文界面与输入。
 
-> CI 会在每次推送时自动运行 `nix flake check` 验证配置可求值；结果见仓库 Actions 页。
+> CI 会在每次推送时自动运行 `nix flake check` 验证配置可求值；每周一自动开 flake 输入更新 PR（`nix flake check` 验证通过后才创建），确认后合并即可小步升级。结果见仓库 Actions 页。
 
 ## 目录结构
 

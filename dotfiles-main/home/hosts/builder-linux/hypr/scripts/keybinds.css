@@ -1,0 +1,21 @@
+/* Style for the keybind cheatsheet popup only (passed via wofi --style) */
+* {
+    font-family: monospace;
+    font-size: 14px;
+}
+
+window {
+    border: 2px solid #33ccff;
+    border-radius: 10px;
+    background-color: rgba(30, 30, 46, 0.95);
+}
+
+#input {
+    margin: 8px;
+    border-radius: 6px;
+}
+
+#entry:selected {
+    background-color: rgba(51, 204, 255, 0.25);
+    border-radius: 6px;
+}

@@ -1,0 +1,43 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "modules-left": ["hyprland/workspaces", "hyprland/mode"],
+    "modules-center": ["hyprland/window"],
+    "modules-right": ["network", "cpu", "memory", "clock", "tray"],
+
+    "hyprland/workspaces": {
+        "format": "{name}",
+        "on-click": "activate"
+    },
+
+    "cpu": {
+        "format": " {usage}%",
+        "interval": 2,
+        "tooltip": true,
+        "on-click": "kitty --class floating-monitor htop"
+    },
+
+    "memory": {
+        "format": " {}%",
+        "interval": 2,
+        "tooltip-format": "RAM: {used:0.1f} / {total:0.1f} GiB ({percentage}%)\nSwap: {swapUsed:0.1f} / {swapTotal:0.1f} GiB",
+        "on-click": "kitty --class floating-monitor htop --sort-key PERCENT_MEM"
+    },
+
+    "network": {
+        "format-wifi": " {essid}",
+        "format-ethernet": "󰈀 {ifname}",
+        "format-disconnected": "⚠ Disconnected",
+        "interval": 2,
+        "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}\nGateway: {gwaddr}\n⬆ {bandwidthUpBytes}  ⬇ {bandwidthDownBytes}",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}\nGateway: {gwaddr}\n⬆ {bandwidthUpBytes}  ⬇ {bandwidthDownBytes}",
+        "on-click": "kitty --class floating-monitor nmtui"
+    },
+
+    "clock": {
+        "format": "{:%I:%M %p  %m/%d/%Y}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+    }
+}
+
